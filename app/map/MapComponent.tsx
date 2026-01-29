@@ -20,10 +20,12 @@ const myIcon = L.divIcon({
   iconSize: [18, 18],
 });
 
-const targetIcon = L.divIcon({
-  className: "",
-  html: '<div class="target-location"></div>',
-  iconSize: [22, 22],
+const targetIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
 });
 
 export default function MapComponent() {
@@ -57,11 +59,11 @@ export default function MapComponent() {
         setTargetPos(target);
 
         const routeRes = await axios.get<OSRMRoute>(
-          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`
+          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`,
         );
 
         const coords = routeRes.data.routes[0].geometry.coordinates.map(
-          (c) => [c[1], c[0]] as [number, number]
+          (c) => [c[1], c[0]] as [number, number],
         );
 
         setRoute(coords);
