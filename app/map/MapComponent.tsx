@@ -14,11 +14,16 @@ type OSRMRoute = {
   }[];
 };
 
-const icon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+const myIcon = L.divIcon({
+  className: "",
+  html: '<div class="my-location"></div>',
+  iconSize: [18, 18],
+});
+
+const targetIcon = L.divIcon({
+  className: "",
+  html: '<div class="target-location"></div>',
+  iconSize: [22, 22],
 });
 
 export default function MapComponent() {
@@ -26,7 +31,7 @@ export default function MapComponent() {
   const [targetPos, setTargetPos] = useState<Pos | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
 
-  // 📍 ตำแหน่งเราแบบ realtime
+  // 📍 ตำแหน่งเรา realtime
   useEffect(() => {
     navigator.geolocation.watchPosition((pos) => {
       setMyPos({
@@ -47,18 +52,16 @@ export default function MapComponent() {
       }
 
       try {
-        // 1) ดึงตำแหน่งเป้าหมาย
         const res = await axios.get<Pos>("/api/push-location");
         const target = res.data;
         setTargetPos(target);
 
-        // 2) ขอเส้นทางจาก OSRM
         const routeRes = await axios.get<OSRMRoute>(
-          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`,
+          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`
         );
 
         const coords = routeRes.data.routes[0].geometry.coordinates.map(
-          (c) => [c[1], c[0]] as [number, number],
+          (c) => [c[1], c[0]] as [number, number]
         );
 
         setRoute(coords);
@@ -87,11 +90,11 @@ export default function MapComponent() {
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       {/* หมุดเรา */}
-      <Marker position={[myPos.lat, myPos.lng]} icon={icon} />
+      <Marker position={[myPos.lat, myPos.lng]} icon={myIcon} />
 
       {/* หมุดเป้าหมาย */}
       {targetPos && (
-        <Marker position={[targetPos.lat, targetPos.lng]} icon={icon} />
+        <Marker position={[targetPos.lat, targetPos.lng]} icon={targetIcon} />
       )}
 
       {/* เส้นนำทาง */}
