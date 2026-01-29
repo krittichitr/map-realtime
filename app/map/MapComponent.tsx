@@ -14,34 +14,48 @@ type OSRMRoute = {
   }[];
 };
 
+// 🔵 วงกลมตำแหน่งเรา
 const myIcon = L.divIcon({
   className: "",
   html: '<div class="my-location"></div>',
   iconSize: [18, 18],
 });
 
+// 🔴 หมุดเป้าหมาย
 const targetIcon = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  shadowUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
+
+// 📏 คำนวณระยะทาง (เมตร)
+function distance(a: Pos, b: Pos) {
+  const R = 6371e3;
+  const φ1 = (a.lat * Math.PI) / 180;
+  const φ2 = (b.lat * Math.PI) / 180;
+  const Δφ = ((b.lat - a.lat) * Math.PI) / 180;
+  const Δλ = ((b.lng - a.lng) * Math.PI) / 180;
+
+  const x =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+  return R * c;
+}
 
 export default function MapComponent() {
   const [myPos, setMyPos] = useState<Pos | null>(null);
   const [targetPos, setTargetPos] = useState<Pos | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
+  const [lastTarget, setLastTarget] = useState<Pos | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // ✅ ปุ่มนำทางต้องอยู่ในนี้
-  const openNavigation = () => {
-  if (!targetPos) return;
-
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${targetPos.lat},${targetPos.lng}&travelmode=driving&dir_action=navigate`;
-  window.open(url, "_blank");
-};
-
-
+  // 📍 ตำแหน่งเรา
   useEffect(() => {
     navigator.geolocation.watchPosition((pos) => {
       setMyPos({
@@ -51,6 +65,14 @@ export default function MapComponent() {
     });
   }, []);
 
+  // 🧭 เปิด Google Maps นำทาง
+  const openNavigation = (target: Pos) => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}&travelmode=driving&dir_action=navigate`;
+    window.open(url, "_blank");
+    setIsNavigating(true);
+  };
+
+  // 🔁 loop realtime
   useEffect(() => {
     let running = true;
 
@@ -61,10 +83,24 @@ export default function MapComponent() {
       }
 
       try {
+        // ดึงเป้าล่าสุด
         const res = await axios.get<Pos>("/api/push-location");
         const target = res.data;
         setTargetPos(target);
 
+        // ถ้ากำลังนำทาง และเป้าขยับ
+        if (lastTarget && isNavigating) {
+          const d = distance(lastTarget, target);
+
+          if (d > 25) {
+            console.log("Target moved → re-navigate");
+            openNavigation(target);
+          }
+        }
+
+        setLastTarget(target);
+
+        // ขอเส้นทาง OSRM
         const routeRes = await axios.get<OSRMRoute>(
           `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`
         );
@@ -86,7 +122,7 @@ export default function MapComponent() {
     return () => {
       running = false;
     };
-  }, [myPos]);
+  }, [myPos, lastTarget, isNavigating]);
 
   if (!myPos) return <div>กำลังหาตำแหน่งเรา...</div>;
 
@@ -111,9 +147,9 @@ export default function MapComponent() {
         {route.length > 0 && <Polyline positions={route} />}
       </MapContainer>
 
-      {/* ✅ ปุ่มนำทาง */}
+      {/* ปุ่มนำทาง */}
       <button
-        onClick={openNavigation}
+        onClick={() => targetPos && openNavigation(targetPos)}
         style={{
           position: "absolute",
           bottom: 20,
