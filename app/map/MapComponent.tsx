@@ -33,7 +33,14 @@ export default function MapComponent() {
   const [targetPos, setTargetPos] = useState<Pos | null>(null);
   const [route, setRoute] = useState<[number, number][]>([]);
 
-  // 📍 ตำแหน่งเรา realtime
+  // ✅ ปุ่มนำทางต้องอยู่ในนี้
+  const openNavigation = () => {
+    if (!targetPos) return;
+
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${targetPos.lat},${targetPos.lng}&travelmode=driving`;
+    window.open(url, "_blank");
+  };
+
   useEffect(() => {
     navigator.geolocation.watchPosition((pos) => {
       setMyPos({
@@ -43,7 +50,6 @@ export default function MapComponent() {
     });
   }, []);
 
-  // 🔁 loop ทุก 4 วิ
   useEffect(() => {
     let running = true;
 
@@ -59,11 +65,11 @@ export default function MapComponent() {
         setTargetPos(target);
 
         const routeRes = await axios.get<OSRMRoute>(
-          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`,
+          `https://router.project-osrm.org/route/v1/driving/${myPos.lng},${myPos.lat};${target.lng},${target.lat}?overview=full&geometries=geojson`
         );
 
         const coords = routeRes.data.routes[0].geometry.coordinates.map(
-          (c) => [c[1], c[0]] as [number, number],
+          (c) => [c[1], c[0]] as [number, number]
         );
 
         setRoute(coords);
@@ -84,23 +90,45 @@ export default function MapComponent() {
   if (!myPos) return <div>กำลังหาตำแหน่งเรา...</div>;
 
   return (
-    <MapContainer
-      center={[myPos.lat, myPos.lng]}
-      zoom={16}
-      style={{ height: "100vh" }}
-    >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <>
+      <MapContainer
+        center={[myPos.lat, myPos.lng]}
+        zoom={16}
+        style={{ height: "100vh" }}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-      {/* หมุดเรา */}
-      <Marker position={[myPos.lat, myPos.lng]} icon={myIcon} />
+        <Marker position={[myPos.lat, myPos.lng]} icon={myIcon} />
 
-      {/* หมุดเป้าหมาย */}
-      {targetPos && (
-        <Marker position={[targetPos.lat, targetPos.lng]} icon={targetIcon} />
-      )}
+        {targetPos && (
+          <Marker
+            position={[targetPos.lat, targetPos.lng]}
+            icon={targetIcon}
+          />
+        )}
 
-      {/* เส้นนำทาง */}
-      {route.length > 0 && <Polyline positions={route} />}
-    </MapContainer>
+        {route.length > 0 && <Polyline positions={route} />}
+      </MapContainer>
+
+      {/* ✅ ปุ่มนำทาง */}
+      <button
+        onClick={openNavigation}
+        style={{
+          position: "absolute",
+          bottom: 20,
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "12px 20px",
+          background: "#1e90ff",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          fontSize: "16px",
+          zIndex: 1000,
+        }}
+      >
+        🧭 นำทางไปหาเป้าหมาย
+      </button>
+    </>
   );
 }
