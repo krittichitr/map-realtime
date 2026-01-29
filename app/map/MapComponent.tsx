@@ -1,61 +1,58 @@
-"use client";
+'use client'
 
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
-import { useEffect, useState } from "react";
-import axios from "axios";
-
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
 
-// 🔥 FIX leaflet marker icon บน Next.js / Vercel
-delete (L.Icon.Default.prototype as any)._getIconUrl
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+const icon = new L.Icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
 })
 
-
-type Position = {
-  lat: number;
-  lng: number;
-};
+type Pos = { lat: number; lng: number }
 
 export default function MapComponent() {
-  const [pos, setPos] = useState<Position | null>(null);
+  const [pos, setPos] = useState<Pos | null>(null)
 
   useEffect(() => {
-    const interval = setInterval(async () => {
+    let running = true
+
+    const fetchLoop = async () => {
       try {
-        const res = await axios.get<Position>("/api/push-location");
-        setPos({
-          lat: res.data.lat,
-          lng: res.data.lng,
-        });
-      } catch (err) {
-        console.log("fetch location error", err);
+        const res = await axios.get<Pos>('/api/push-location')
+        if (running) {
+          setPos(res.data)
+        }
+      } catch (e) {
+        console.log(e)
       }
-    }, 3000);
 
-    return () => clearInterval(interval);
-  }, []);
+      // รอ 3 วิ แล้วเรียกใหม่
+      if (running) {
+        setTimeout(fetchLoop, 3000)
+      }
+    }
 
-  if (!pos) return <div>Loading map...</div>;
+    fetchLoop()
+
+    return () => {
+      running = false
+    }
+  }, [])
+
+  if (!pos) return <div>Loading...</div>
 
   return (
     <MapContainer
       center={[pos.lat, pos.lng]}
-      zoom={16}
-      style={{ height: "100vh", width: "100%" }}
+      zoom={17}
+      style={{ height: '100vh' }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {pos && (
-        <Marker key={`${pos.lat}-${pos.lng}`} position={[pos.lat, pos.lng]} />
-      )}
+      <Marker position={[pos.lat, pos.lng]} icon={icon} />
     </MapContainer>
-  );
+  )
 }
