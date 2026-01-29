@@ -35,11 +35,12 @@ export default function MapComponent() {
 
   // ✅ ปุ่มนำทางต้องอยู่ในนี้
   const openNavigation = () => {
-    if (!targetPos) return;
+  if (!targetPos) return;
 
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${targetPos.lat},${targetPos.lng}&travelmode=driving`;
-    window.open(url, "_blank");
-  };
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${targetPos.lat},${targetPos.lng}&travelmode=driving&dir_action=navigate`;
+  window.open(url, "_blank");
+};
+
 
   useEffect(() => {
     navigator.geolocation.watchPosition((pos) => {
