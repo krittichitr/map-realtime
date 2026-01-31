@@ -1,17 +1,20 @@
-const users: Record<string, { lat: number; lng: number }> = {}
+let latestLocation = {
+  lat: 13.7563,
+  lng: 100.5018,
+}
 
 export async function POST(req: Request) {
-  const { uid, lat, lng } = await req.json()
+  const body = await req.json()
+  const { lat, lng } = body
 
-  if (!uid) {
-    return Response.json({ error: "no uid" }, { status: 400 })
-  }
+  latestLocation = { lat, lng }
 
-  users[uid] = { lat, lng }
-
-  return Response.json({ success: true })
+  return new Response(JSON.stringify({ ok: true }), { status: 200 })
 }
 
 export async function GET() {
-  return Response.json(users)
+  return new Response(JSON.stringify(latestLocation), {
+    status: 200,
+    headers: { 'Cache-Control': 'no-store' },
+  })
 }

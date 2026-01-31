@@ -1,6 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
-
 
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import L from "leaflet";
@@ -69,7 +67,7 @@ export default function MapComponent() {
     window.open(url, "_blank");
   };
 
-  // 🔁 Loop คำนวณเส้นทาง realtime 
+  // 🔁 Loop คำนวณเส้นทาง realtime (ของเดิมที่เวิร์ค)
   useEffect(() => {
     const interval = setInterval(async () => {
       if (!myPos) return;
