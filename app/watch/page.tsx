@@ -1,20 +1,24 @@
-'use client'
-import { useEffect } from 'react'
-import axios from 'axios'
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import axios from "axios";
 
 export default function Watch() {
+  const searchParams = useSearchParams();
+  const uid = searchParams?.get("uid");
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        await axios.post('/api/push-location', {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
+    if (!uid) return;
+
+    navigator.geolocation.watchPosition((pos) => {
+      axios.post("/api/push-location", {
+        uid,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
       });
-    }, 5000);
+    });
+  }, [uid]);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  return <h1>มือถือกำลังส่ง GPS...</h1>;
+  return <div>กำลังส่งตำแหน่งของ {uid}...</div>;
 }

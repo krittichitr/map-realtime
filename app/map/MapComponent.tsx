@@ -67,7 +67,7 @@ export default function MapComponent() {
     window.open(url, "_blank");
   };
 
-  // 🔁 Loop คำนวณเส้นทาง realtime (ของเดิมที่เวิร์ค)
+  // 🔁 Loop คำนวณเส้นทาง realtime 
   useEffect(() => {
     const interval = setInterval(async () => {
       if (!myPos) return;
