@@ -1,24 +1,14 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import axios from "axios";
+export const dynamic = "force-dynamic";
 
-export default function Watch() {
-  const searchParams = useSearchParams();
-  const uid = searchParams?.get("uid");
+import { Suspense } from "react";
+import WatchClient from "./watch-client";
 
-  useEffect(() => {
-    if (!uid) return;
-
-    navigator.geolocation.watchPosition((pos) => {
-      axios.post("/api/push-location", {
-        uid,
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-      });
-    });
-  }, [uid]);
-
-  return <div>กำลังส่งตำแหน่งของ {uid}...</div>;
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WatchClient />
+    </Suspense>
+  );
 }
